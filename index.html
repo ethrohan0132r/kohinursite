@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Custom Label Printer — Kohinur</title>
   <meta name="description"
-    content="Custom product label printer for thermal printers. Create and print barcode labels instantly." />
+    content="Custom product label printer with local database, stock history, and barcode search." />
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
 </head>
@@ -15,58 +15,408 @@
 
   <header class="app-header no-print">
     <h1>🏷️ Custom Label Printer</h1>
-    <p>নিজের মতো করে লেবেল লিখুন, সরাসরি প্রিন্ট করুন</p>
+    <p>লেবেল তৈরি করুন · Auto-Save · Stock History · Barcode Search</p>
   </header>
 
-  <div class="app-container">
+  <!-- ─── Tab Navigation ─── -->
+  <nav class="tab-nav no-print" id="tabNav">
+    <button class="tab-btn active" data-tab="tab-label" onclick="switchTab('tab-label', this)">
+      <span class="tab-icon">🏷️</span> Label তৈরি
+    </button>
+    <button class="tab-btn" data-tab="tab-history" onclick="switchTab('tab-history', this)">
+      <span class="tab-icon">📦</span> Stock History
+    </button>
+    <button class="tab-btn" data-tab="tab-search" onclick="switchTab('tab-search', this)">
+      <span class="tab-icon">🔍</span> Barcode Search
+    </button>
+  </nav>
 
-    <!-- ─── Left: Form Panel ─── -->
-    <div class="glass-card form-panel no-print">
-      <div class="card-title">
-        <span class="icon purple">✏️</span>
-        Label তৈরি করুন
+  <!-- ══════════════════════════════════════════════
+       TAB 1: Label Creation
+       ══════════════════════════════════════════════ -->
+  <div class="tab-content active" id="tab-label">
+    <div class="app-container">
+
+      <!-- Left: Form Panel -->
+      <div class="glass-card form-panel no-print">
+        <div class="card-title">
+          <span class="icon purple">✏️</span>
+          Label তৈরি করুন
+        </div>
+
+        <!-- Default Shop Name -->
+        <div class="form-group">
+          <label>Shop Name (সব লেবেলে একই থাকবে)</label>
+          <input type="text" id="shopName" placeholder="e.g. KOHINUR GARMENTS" value="KOHINUR GARMENTS" />
+        </div>
+
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:18px 0;" />
+
+        <!-- Label Entries Container -->
+        <div id="entriesContainer"></div>
+
+        <!-- Category Manager -->
+        <div class="category-manager" id="categoryManager">
+          <div class="cat-manager-header" onclick="toggleCatManager()">
+            <span>⚙️ Category পরিচালনা</span>
+            <span class="cat-toggle" id="catToggle">▼</span>
+          </div>
+          <div class="cat-manager-body" id="catManagerBody" style="display:none;">
+            <div class="cat-add-row">
+              <input type="text" id="newCatInput" placeholder="নতুন category নাম..." />
+              <button class="btn btn-accent btn-sm" onclick="addCustomCategory()">＋ যোগ</button>
+            </div>
+            <div class="cat-list" id="catList"></div>
+          </div>
+        </div>
+
+        <div class="actions-row">
+          <button class="btn btn-accent" id="btnAdd" onclick="addEntry()">＋ নতুন Label</button>
+          <button class="btn btn-outline" onclick="clearAll()">🗑️ সব মুছুন</button>
+          <button class="btn btn-success" onclick="printLabels()">🖨️ Print & Save</button>
+        </div>
+
+        <div id="saveStatus" class="save-status" style="display:none;"></div>
       </div>
 
-      <!-- Default Shop Name -->
-      <div class="form-group">
-        <label>Shop Name (সব লেবেলে একই থাকবে)</label>
-        <input type="text" id="shopName" placeholder="e.g. KOHINUR GARMENTS" value="KOHINUR GARMENTS" />
+      <!-- Right: Preview Panel -->
+      <div class="glass-card preview-panel">
+        <div class="card-title no-print">
+          <span class="icon green">👁️</span>
+          Preview
+        </div>
+
+        <div class="preview-area" id="previewArea">
+          <div class="empty-preview" id="emptyPreview">
+            <div class="empty-icon">🏷️</div>
+            <p>বাম দিকে তথ্য দিন — এখানে label দেখা যাবে</p>
+          </div>
+        </div>
       </div>
 
-      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:18px 0;" />
+    </div>
+  </div>
 
-      <!-- Label Entries Container -->
-      <div id="entriesContainer"></div>
+  <!-- ══════════════════════════════════════════════
+       TAB 2: Stock History
+       ══════════════════════════════════════════════ -->
+  <div class="tab-content" id="tab-history">
+    <div class="history-container">
+      <div class="glass-card">
+        <div class="card-title">
+          <span class="icon green">📦</span>
+          Product Stock History
+        </div>
 
-      <div class="actions-row">
-        <button class="btn btn-accent" id="btnAdd" onclick="addEntry()">＋ নতুন Label</button>
-        <button class="btn btn-outline" onclick="clearAll()">🗑️ সব মুছুন</button>
-        <button class="btn btn-success" onclick="printLabels()">🖨️ Print</button>
+        <!-- Category Sub-Tabs -->
+        <div class="category-tabs" id="categoryTabs">
+          <button class="cat-tab active" data-cat="all" onclick="filterHistory('all', this)">📁 সব</button>
+        </div>
+
+        <!-- History Stats -->
+        <div class="history-stats" id="historyStats"></div>
+
+        <!-- History List -->
+        <div class="history-list" id="historyList">
+          <div class="empty-preview">
+            <div class="empty-icon">📦</div>
+            <p>এখনও কোনো print record নেই</p>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions-row" style="margin-top:20px;">
+          <button class="btn btn-accent btn-sm" onclick="exportDB()">💾 Backup (JSON)</button>
+          <button class="btn btn-outline btn-sm" onclick="document.getElementById('importFile').click()">📤 Restore
+            (JSON)</button>
+          <button class="btn btn-outline btn-sm" onclick="exportHistory()">📥 Export CSV</button>
+          <button class="btn btn-danger-solid" onclick="clearHistory()">🗑️ সব মুছুন</button>
+        </div>
+        <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importDB(event)" />
       </div>
     </div>
+  </div>
 
-    <!-- ─── Right: Preview Panel ─── -->
-    <div class="glass-card preview-panel">
-      <div class="card-title no-print">
-        <span class="icon green">👁️</span>
-        Preview
+  <!-- ─── Edit Modal ─── -->
+  <div class="modal-overlay" id="editModal" style="display:none;" onclick="closeEditModal(event)">
+    <div class="modal-content glass-card" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <span>✏️ Product Edit করুন</span>
+        <button class="btn-remove" onclick="closeEditModal()">✕</button>
       </div>
+      <input type="hidden" id="editId" />
+      <div class="form-group">
+        <label>Product Name</label>
+        <input type="text" id="editProduct" placeholder="Product name" />
+      </div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label>Barcode</label>
+          <input type="text" id="editBarcode" placeholder="Barcode" />
+        </div>
+        <div class="form-group">
+          <label>Price (৳)</label>
+          <input type="text" id="editPrice" placeholder="Price" />
+        </div>
+      </div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label>Category</label>
+          <select id="editCategory" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label>Copies</label>
+          <input type="number" id="editCopies" min="1" max="100" />
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeEditModal()">বাতিল</button>
+        <button class="btn btn-success" onclick="saveEdit()">💾 Save</button>
+      </div>
+    </div>
+  </div>
 
-      <div class="preview-area" id="previewArea">
-        <div class="empty-preview" id="emptyPreview">
-          <div class="empty-icon">🏷️</div>
-          <p>বাম দিকে তথ্য দিন — এখানে label দেখা যাবে</p>
+  <!-- ══════════════════════════════════════════════
+       TAB 3: Barcode Search
+       ══════════════════════════════════════════════ -->
+  <div class="tab-content" id="tab-search">
+    <div class="search-container">
+      <div class="glass-card">
+        <div class="card-title">
+          <span class="icon purple">🔍</span>
+          Barcode Search
+        </div>
+
+        <div class="search-bar-wrapper">
+          <span class="search-icon">🔎</span>
+          <input type="text" id="searchInput" placeholder="Barcode লিখুন বা স্ক্যান করুন..." oninput="searchBarcode()"
+            autofocus />
+          <button class="btn btn-outline btn-clear-search" onclick="clearSearch()">✕</button>
+        </div>
+
+        <div id="searchResults" class="search-results">
+          <div class="empty-preview">
+            <div class="empty-icon">🔍</div>
+            <p>Barcode লিখলে এখানে result দেখাবে</p>
+          </div>
         </div>
       </div>
     </div>
-
   </div>
 
   <script>
-    // ─── State ───
+    // ═══════════════════════════════════════════
+    //  IndexedDB Configuration (Client-Side Storage)
+    // ═══════════════════════════════════════════
+    const DB_NAME = 'KohinurLabelDB';
+    const DB_VERSION = 2; // Incremented for safety
+    const STORE_NAME = 'prints';
+    let db;
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onupgradeneeded = (event) => {
+          const db = event.target.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            const store = db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+            store.createIndex('barcode', 'barcode', { unique: false });
+            store.createIndex('timestamp', 'timestamp', { unique: false });
+          }
+        };
+
+        request.onsuccess = (event) => {
+          db = event.target.result;
+          console.log('✅ IndexedDB Connected');
+          resolve(db);
+        };
+
+        request.onerror = (event) => {
+          console.error('❌ IndexedDB Error:', event.target.error);
+          reject(event.target.error);
+        };
+      });
+    }
+
+    // ─── Record Operations ───
+    function addRecord(record) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.add(record);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function getAllRecords() {
+      return new Promise((resolve, reject) => {
+        if (!db) return resolve([]);
+        const tx = db.transaction(STORE_NAME, 'readonly');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function updateRecord(record) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.put(record);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function deleteRecord(id) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.delete(id);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function clearAllRecords() {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const req = store.clear();
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    // ─── Search ───
+    async function searchByBarcode(barcode) {
+      const records = await getAllRecords();
+      return records.filter(r => r.barcode === barcode);
+    }
+
+    // ═══════════════════════════════════════════
+    //  Categories (LocalStorage)
+    // ═══════════════════════════════════════════
+    const DEFAULT_CATEGORIES = [
+      'Three Piece', 'Saree', 'Panjabi', 'Shirt', 'Pant',
+      'Lungi', 'Shawl', 'Orna', 'Kids Wear', 'Undergarments', 'Other'
+    ];
+
+    let cachedCategories = [...DEFAULT_CATEGORIES];
+
+    function loadCategories() {
+      const saved = localStorage.getItem('kohinur_categories');
+      if (saved) {
+        try {
+          cachedCategories = JSON.parse(saved);
+        } catch (e) {
+          cachedCategories = [...DEFAULT_CATEGORIES];
+        }
+      } else {
+        cachedCategories = [...DEFAULT_CATEGORIES];
+      }
+      return cachedCategories;
+    }
+
+    function getCategories() {
+      return cachedCategories;
+    }
+
+    function saveCategories(cats) {
+      cachedCategories = cats;
+      localStorage.setItem('kohinur_categories', JSON.stringify(cats));
+    }
+
+    function addCustomCategory() {
+      const input = document.getElementById('newCatInput');
+      const name = input.value.trim();
+      if (!name) return;
+
+      loadCategories(); // Refresh
+      const cats = getCategories();
+
+      if (cats.some(c => c.toLowerCase() === name.toLowerCase())) {
+        alert('এই category আগে থেকেই আছে!');
+        return;
+      }
+
+      cats.push(name);
+      saveCategories(cats);
+
+      input.value = '';
+      renderCatManager();
+      refreshAllCategoryDropdowns();
+    }
+
+    function removeCustomCategory(cat) {
+      if (!confirm(`"${cat}" category মুছে ফেলবেন?`)) return;
+
+      loadCategories();
+      let cats = getCategories().filter(c => c !== cat);
+      if (cats.length === 0) cats = [...DEFAULT_CATEGORIES];
+
+      saveCategories(cats);
+      renderCatManager();
+      refreshAllCategoryDropdowns();
+    }
+
+    function toggleCatManager() {
+      const body = document.getElementById('catManagerBody');
+      const arrow = document.getElementById('catToggle');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+        arrow.textContent = '▲';
+        renderCatManager();
+      } else {
+        body.style.display = 'none';
+        arrow.textContent = '▼';
+      }
+    }
+
+    function renderCatManager() {
+      const cats = getCategories();
+      const list = document.getElementById('catList');
+      list.innerHTML = cats.map(c => `
+        <div class="cat-item">
+          <span>${escapeHtml(c)}</span>
+          <button class="cat-del-btn" onclick="removeCustomCategory('${c.replace(/'/g, "\\'")}')">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function refreshAllCategoryDropdowns() {
+      const cats = getCategories();
+      document.querySelectorAll('.label-entry').forEach(entry => {
+        const id = entry.id.split('-')[1];
+        const sel = document.getElementById(`category-${id}`);
+        if (!sel) return;
+        const current = sel.value;
+        const opts = cats.map(c => `<option value="${c}"${c === current ? ' selected' : ''}>${c}</option>`).join('');
+        if (sel.innerHTML !== opts) sel.innerHTML = opts;
+      });
+    }
+
+    // ═══════════════════════════════════════════
+    //  Tab Switching
+    // ═══════════════════════════════════════════
+    function switchTab(tabId, btn) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+
+      if (tabId === 'tab-history') loadHistory();
+      if (tabId === 'tab-search') document.getElementById('searchInput').focus();
+    }
+
+    // ═══════════════════════════════════════════
+    //  Label Entry
+    // ═══════════════════════════════════════════
     let entryCount = 0;
 
-    // ─── Auto-generate barcode number ───
     function generateBarcode() {
       const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
       let code = '';
@@ -75,11 +425,11 @@
       return code;
     }
 
-    // ─── Add a new label entry ───
     function addEntry() {
       entryCount++;
       const id = entryCount;
       const autoBarcode = generateBarcode();
+      const catOptions = getCategories().map(c => `<option value="${c}">${c}</option>`).join('');
 
       const div = document.createElement('div');
       div.className = 'label-entry';
@@ -108,9 +458,17 @@
             <input type="text" id="price-${id}" placeholder="e.g. 1578" oninput="updatePreview()" />
           </div>
         </div>
-        <div class="form-group">
-          <label>Product Name</label>
-          <input type="text" id="product-${id}" placeholder="e.g. KUTI THREE PIECE" oninput="updatePreview()" />
+        <div class="form-row">
+          <div class="form-group">
+            <label>Product Name</label>
+            <input type="text" id="product-${id}" placeholder="e.g. KUTI THREE PIECE" oninput="updatePreview()" />
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="category-${id}" class="form-select" oninput="updatePreview()">
+              ${catOptions}
+            </select>
+          </div>
         </div>
       `;
 
@@ -118,7 +476,6 @@
       updatePreview();
     }
 
-    // ─── Remove an entry ───
     function removeEntry(id) {
       const el = document.getElementById(`entry-${id}`);
       if (el) {
@@ -130,14 +487,12 @@
       }
     }
 
-    // ─── Clear all ───
     function clearAll() {
       document.getElementById('entriesContainer').innerHTML = '';
       entryCount = 0;
       updatePreview();
     }
 
-    // ─── Regenerate barcode for a specific entry ───
     function regenBarcode(id) {
       const input = document.getElementById(`barcode-${id}`);
       if (input) {
@@ -146,14 +501,15 @@
       }
     }
 
-    // ─── Update preview ───
+    // ═══════════════════════════════════════════
+    //  Preview
+    // ═══════════════════════════════════════════
     function updatePreview() {
       const shopName = document.getElementById('shopName').value.trim() || 'SHOP NAME';
       const entries = document.querySelectorAll('.label-entry');
       const previewArea = document.getElementById('previewArea');
       const emptyPreview = document.getElementById('emptyPreview');
 
-      // Remove old previews
       previewArea.querySelectorAll('.preview-label').forEach(el => el.remove());
 
       if (entries.length === 0) {
@@ -172,7 +528,6 @@
         for (let c = 0; c < copies; c++) {
           const label = document.createElement('div');
           label.className = 'preview-label';
-
           const barcodeId = `bc-${id}-${c}`;
 
           label.innerHTML = `
@@ -185,7 +540,6 @@
 
           previewArea.appendChild(label);
 
-          // Generate barcode
           if (barcode) {
             try {
               JsBarcode(`#${barcodeId}`, barcode, {
@@ -205,24 +559,402 @@
       });
     }
 
-    // ─── HTML escape ───
     function escapeHtml(text) {
       const d = document.createElement('div');
       d.textContent = text;
       return d.innerHTML;
     }
 
-    // ─── Print ───
-    function printLabels() {
+    // ═══════════════════════════════════════════
+    //  Print & Auto-Save
+    // ═══════════════════════════════════════════
+    async function printLabels() {
       updatePreview();
-      setTimeout(() => window.print(), 300);
+
+      const shopName = document.getElementById('shopName').value.trim() || 'SHOP NAME';
+      const entries = document.querySelectorAll('.label-entry');
+      const records = [];
+
+      entries.forEach(entry => {
+        const id = entry.id.split('-')[1];
+        const barcode = document.getElementById(`barcode-${id}`)?.value.trim() || '';
+        const product = document.getElementById(`product-${id}`)?.value.trim() || '';
+        const price = document.getElementById(`price-${id}`)?.value.trim() || '';
+        const copies = parseInt(document.getElementById(`copies-${id}`)?.value) || 1;
+        const category = document.getElementById(`category-${id}`)?.value || 'Other';
+
+        if (barcode || product) {
+          records.push({
+            shopName,
+            barcode,
+            product,
+            price,
+            copies,
+            category,
+            timestamp: new Date().toISOString()
+          });
+        }
+      });
+
+      if (records.length > 0) {
+        try {
+          for (const rec of records) {
+            await addRecord(rec);
+          }
+          showSaveStatus(`✅ ${records.length}টি label সংরক্ষিত হয়েছে!`, 'success');
+        } catch (e) {
+          showSaveStatus('❌ Save করতে সমস্যা হয়েছে!', 'error');
+          console.error('Save error:', e);
+        }
+      }
+
+      setTimeout(() => window.print(), 400);
     }
 
-    // ─── Listen for shop name changes ───
+    function showSaveStatus(msg, type) {
+      const el = document.getElementById('saveStatus');
+      el.textContent = msg;
+      el.className = `save-status ${type}`;
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 4000);
+    }
+
+    // ═══════════════════════════════════════════
+    //  Stock History
+    // ═══════════════════════════════════════════
+    let currentHistoryCat = 'all';
+
+    async function loadHistory() {
+      try {
+        const records = await getAllRecords();
+        renderCategoryTabs(records);
+        renderHistory(records, currentHistoryCat);
+        renderStats(records);
+      } catch (e) {
+        console.error('Load history error:', e);
+      }
+    }
+
+    function renderCategoryTabs(records) {
+      const cats = new Set(records.map(r => r.category));
+      const container = document.getElementById('categoryTabs');
+      container.innerHTML = `<button class="cat-tab ${currentHistoryCat === 'all' ? 'active' : ''}" data-cat="all" onclick="filterHistory('all', this)">📁 সব (${records.length})</button>`;
+
+      const sortedCats = [...cats].sort();
+      sortedCats.forEach(cat => {
+        const count = records.filter(r => r.category === cat).length;
+        const isActive = currentHistoryCat === cat ? 'active' : '';
+        container.innerHTML += `<button class="cat-tab ${isActive}" data-cat="${cat}" onclick="filterHistory('${cat}', this)">${cat} (${count})</button>`;
+      });
+    }
+
+    function filterHistory(cat, btn) {
+      currentHistoryCat = cat;
+      document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadHistory();
+    }
+
+    function renderStats(records) {
+      const el = document.getElementById('historyStats');
+      if (records.length === 0) { el.innerHTML = ''; return; }
+
+      const totalCopies = records.reduce((s, r) => s + (r.copies || 1), 0);
+      const uniqueProducts = new Set(records.map(r => r.product)).size;
+      const uniqueBarcodes = new Set(records.map(r => r.barcode)).size;
+
+      el.innerHTML = `
+        <div class="stat-card"><div class="stat-num">${records.length}</div><div class="stat-label">মোট Records</div></div>
+        <div class="stat-card"><div class="stat-num">${totalCopies}</div><div class="stat-label">মোট Labels</div></div>
+        <div class="stat-card"><div class="stat-num">${uniqueProducts}</div><div class="stat-label">Products</div></div>
+        <div class="stat-card"><div class="stat-num">${uniqueBarcodes}</div><div class="stat-label">Barcodes</div></div>
+      `;
+    }
+
+    function renderHistory(records, cat) {
+      const container = document.getElementById('historyList');
+      let filtered = cat === 'all' ? records : records.filter(r => r.category === cat);
+
+      // Sort newest first
+      filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-preview">
+            <div class="empty-icon">📦</div>
+            <p>এই category-তে কোনো record নেই</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(rec => `
+        <div class="history-card">
+          <div class="history-card-header">
+            <span class="history-product">${escapeHtml(rec.product || 'N/A')}</span>
+            <span class="history-cat-badge">${escapeHtml(rec.category)}</span>
+          </div>
+          <div class="history-details">
+            <div class="history-detail"><span class="detail-label">Barcode:</span> <span class="detail-value mono">${escapeHtml(rec.barcode)}</span></div>
+            <div class="history-detail"><span class="detail-label">Price:</span> <span class="detail-value">৳${escapeHtml(rec.price || '—')}</span></div>
+            <div class="history-detail"><span class="detail-label">Copies:</span> <span class="detail-value">${rec.copies || 1}</span></div>
+            <div class="history-detail"><span class="detail-label">Shop:</span> <span class="detail-value">${escapeHtml(rec.shopName)}</span></div>
+            <div class="history-detail"><span class="detail-label">Date:</span> <span class="detail-value">${formatDate(rec.timestamp)}</span></div>
+          </div>
+          <div class="history-actions">
+            <button class="btn btn-accent btn-sm" onclick="openEditModal(${rec.id})">✏️ Edit</button>
+            <button class="btn btn-outline btn-sm" onclick="reprintFromHistory(${rec.id})">🖨️ Re-Print</button>
+            <button class="btn btn-danger-sm" onclick="deleteSingleRecord(${rec.id})">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ═══════════════════════════════════════════
+    //  Edit Modal
+    // ═══════════════════════════════════════════
+    async function openEditModal(id) {
+      // Fetch directly from IDB
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.get(id);
+      req.onsuccess = () => {
+        const rec = req.result;
+        if (!rec) return;
+        document.getElementById('editId').value = rec.id;
+        document.getElementById('editProduct').value = rec.product || '';
+        document.getElementById('editBarcode').value = rec.barcode || '';
+        document.getElementById('editPrice').value = rec.price || '';
+        document.getElementById('editCopies').value = rec.copies || 1;
+
+        const sel = document.getElementById('editCategory');
+        const cats = getCategories();
+        sel.innerHTML = cats.map(c => `<option value="${c}"${c === rec.category ? ' selected' : ''}>${c}</option>`).join('');
+        document.getElementById('editModal').style.display = 'flex';
+      };
+    }
+
+    function closeEditModal(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('editModal').style.display = 'none';
+    }
+
+    async function saveEdit() {
+      const id = parseInt(document.getElementById('editId').value);
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.get(id);
+
+      req.onsuccess = () => {
+        const rec = req.result;
+        if (!rec) return;
+        rec.product = document.getElementById('editProduct').value.trim();
+        rec.barcode = document.getElementById('editBarcode').value.trim();
+        rec.price = document.getElementById('editPrice').value.trim();
+        rec.copies = parseInt(document.getElementById('editCopies').value) || 1;
+        rec.category = document.getElementById('editCategory').value;
+
+        store.put(rec).onsuccess = () => {
+          closeEditModal();
+          loadHistory();
+        };
+      };
+    }
+
+    function formatDate(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString('bn-BD', { year: 'numeric', month: 'short', day: 'numeric' }) +
+        ' ' + d.toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    async function reprintFromHistory(id) {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.get(id);
+      req.onsuccess = () => {
+        const rec = req.result;
+        if (!rec) return;
+        switchTab('tab-label', document.querySelector('[data-tab="tab-label"]'));
+        clearAll();
+        document.getElementById('shopName').value = rec.shopName;
+        addEntry();
+        const eid = entryCount;
+        document.getElementById(`barcode-${eid}`).value = rec.barcode;
+        document.getElementById(`price-${eid}`).value = rec.price;
+        document.getElementById(`product-${eid}`).value = rec.product;
+        document.getElementById(`category-${eid}`).value = rec.category;
+        document.getElementById(`copies-${eid}`).value = rec.copies || 1;
+        updatePreview();
+      };
+    }
+
+    async function deleteSingleRecord(id) {
+      if (!confirm('এই record মুছে ফেলবেন?')) return;
+      await deleteRecord(id);
+      loadHistory();
+    }
+
+    async function clearHistory() {
+      if (!confirm('⚠️ সব print history মুছে যাবে! নিশ্চিত?')) return;
+      await clearAllRecords();
+      loadHistory();
+    }
+
+    // ═══════════════════════════════════════════
+    //  Backup / Restore (JSON)
+    // ═══════════════════════════════════════════
+    async function exportDB() {
+      const records = await getAllRecords();
+      const backup = {
+        timestamp: new Date().toISOString(),
+        totalRecords: records.length,
+        version: '1.0',
+        categories: getCategories(),
+        records: records
+      };
+      const json = JSON.stringify(backup, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `kohinur_backup_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ═══════════════════════════════════════════
+    //  Barcode Search
+    // ═══════════════════════════════════════════
+    let searchTimeout;
+    function searchBarcode() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(async () => {
+        const query = document.getElementById('searchInput').value.trim().toLowerCase();
+        const container = document.getElementById('searchResults');
+
+        if (!query) {
+          container.innerHTML = `
+            <div class="empty-preview">
+              <div class="empty-icon">🔍</div>
+              <p>Barcode লিখলে এখানে result দেখাবে</p>
+            </div>`;
+          return;
+        }
+
+        try {
+          const all = await getAllRecords();
+          const matches = all.filter(r =>
+            (r.barcode && r.barcode.toLowerCase().includes(query)) ||
+            (r.product && r.product.toLowerCase().includes(query))
+          );
+
+          if (matches.length === 0) {
+            container.innerHTML = `
+            <div class="empty-preview">
+              <div class="empty-icon">😕</div>
+              <p>কোনো record পাওয়া যায়নি</p>
+            </div>`;
+            return;
+          }
+
+          // Group by barcode to show latest
+          const latestMap = new Map();
+          matches.forEach(r => {
+            // If multiple records for same barcode, we can list them all or just show matches
+            // Here we list all matches sorted by date
+          });
+          matches.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+          container.innerHTML = matches.map(r => `
+            <div class="search-result-card">
+              <div class="search-result-header">
+                <span class="search-result-product">${escapeHtml(r.product)}</span>
+                <span class="history-cat-badge">${escapeHtml(r.category)}</span>
+              </div>
+              <div class="search-result-barcode">${escapeHtml(r.barcode)}</div>
+              <div class="history-details">
+                <div class="history-detail"><span class="detail-label">Price:</span> <span class="detail-value">৳${escapeHtml(r.price)}</span></div>
+                <div class="history-detail"><span class="detail-label">Date:</span> <span class="detail-value">${formatDate(r.timestamp)}</span></div>
+              </div>
+              <div class="history-actions" style="margin-top:10px;">
+                <button class="btn btn-outline btn-sm" onclick="reprintFromHistory(${r.id})">🖨️ Print</button>
+              </div>
+            </div>
+          `).join('');
+
+        } catch (e) { console.error('Search error:', e); }
+      }, 250);
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      searchBarcode();
+    }
+
+    async function importDB(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      event.target.value = '';
+
+      try {
+        const text = await file.text();
+        const backup = JSON.parse(text);
+
+        if (!backup.records || !Array.isArray(backup.records)) {
+          alert('❗ এটা সঠিক backup file নয়!');
+          return;
+        }
+
+        const mode = confirm(
+          `📦 ${backup.totalRecords || backup.records.length}টি record পাওয়া গেছে\n\n` +
+          `OK = পুরনো data রেখে নতুন data যোগ করুন\n` +
+          `Cancel = পুরনো data মুছে শুধু backup data রাখুন`
+        );
+
+        if (!mode) {
+          await clearAllRecords();
+        }
+
+        let imported = 0;
+        // Batch import for speed
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+
+        backup.records.forEach(rec => {
+          const newRec = { ...rec };
+          delete newRec.id; // Auto-increment will handle ID
+          store.add(newRec);
+          imported++;
+        });
+
+        tx.oncomplete = () => {
+          alert(`✅ ${imported}টি record restore হয়েছে!`);
+          loadHistory();
+        };
+
+        if (backup.categories && Array.isArray(backup.categories)) {
+          saveCategories(backup.categories);
+        }
+
+      } catch (e) {
+        console.error(e);
+        alert('❗ File পড়তে সমস্যা! সঠিক JSON file দিন।');
+      }
+    }
+
+    // ═══════════════════════════════════════════
+    //  Init
+    // ═══════════════════════════════════════════
     document.getElementById('shopName').addEventListener('input', updatePreview);
 
-    // ─── Start with one empty entry ───
-    addEntry();
+    // Initial load
+    (async function init() {
+      try {
+        await initDB();
+        loadCategories();
+        addEntry();
+        console.log('✅ Connected to IndexedDB');
+      } catch (e) { console.error('Init failed', e); }
+    })();
   </script>
 
 </body>
