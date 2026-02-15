@@ -1,0 +1,570 @@
+/* ==========================================
+   CUSTOM LABEL PRINTER — STYLE SHEET
+   ========================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Bengali:wght@400;600;700&display=swap');
+
+:root {
+  --bg-primary: #0f0f1a;
+  --bg-secondary: #1a1a2e;
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-glass: rgba(255, 255, 255, 0.06);
+  --border-glass: rgba(255, 255, 255, 0.1);
+  --text-primary: #f0f0f5;
+  --text-secondary: #a0a0b8;
+  --accent: #6c63ff;
+  --accent-glow: rgba(108, 99, 255, 0.35);
+  --accent-hover: #7b73ff;
+  --danger: #ff4d6a;
+  --danger-hover: #ff6b82;
+  --success: #00c896;
+  --input-bg: rgba(255, 255, 255, 0.07);
+  --input-border: rgba(255, 255, 255, 0.12);
+  --input-focus: rgba(108, 99, 255, 0.5);
+  --radius: 14px;
+  --radius-sm: 8px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', 'Noto Sans Bengali', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Animated background */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 20% 50%, rgba(108, 99, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(0, 200, 150, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(255, 77, 106, 0.05) 0%, transparent 50%);
+  animation: bgShift 20s ease-in-out infinite alternate;
+  z-index: -1;
+}
+
+@keyframes bgShift {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  100% {
+    transform: translate(-3%, -3%) rotate(3deg);
+  }
+}
+
+/* ── Header ── */
+.app-header {
+  text-align: center;
+  padding: 40px 20px 20px;
+}
+
+.app-header h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #6c63ff, #00c896);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+}
+
+.app-header p {
+  color: var(--text-secondary);
+  margin-top: 6px;
+  font-size: 0.95rem;
+}
+
+/* ── Main Layout ── */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  align-items: start;
+}
+
+/* ── Glass Card ── */
+.glass-card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius);
+  padding: 28px;
+  transition: border-color 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-title .icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.card-title .icon.purple {
+  background: rgba(108, 99, 255, 0.2);
+}
+
+.card-title .icon.green {
+  background: rgba(0, 200, 150, 0.2);
+}
+
+/* ── Form Inputs ── */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  outline: none;
+}
+
+.form-group input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.form-group input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--input-focus);
+}
+
+/* ── Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-accent {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+.btn-accent:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px var(--accent-glow);
+}
+
+.btn-danger {
+  background: rgba(255, 77, 106, 0.15);
+  color: var(--danger);
+  border: 1px solid rgba(255, 77, 106, 0.25);
+}
+
+.btn-danger:hover {
+  background: rgba(255, 77, 106, 0.25);
+  color: var(--danger-hover);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-glass);
+}
+
+.btn-outline:hover {
+  background: var(--bg-glass);
+  color: var(--text-primary);
+}
+
+.btn-gen {
+  padding: 10px 14px !important;
+  font-size: 1rem;
+  min-width: 42px;
+}
+
+.btn-success {
+  background: var(--success);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(0, 200, 150, 0.3);
+}
+
+.btn-success:hover {
+  background: #00dba5;
+  transform: translateY(-1px);
+}
+
+.actions-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+/* ── Label Entry List ── */
+.label-entry {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-bottom: 12px;
+  position: relative;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.label-entry .entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.label-entry .entry-number {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.label-entry .btn-remove {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 77, 106, 0.12);
+  border: none;
+  color: var(--danger);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.label-entry .btn-remove:hover {
+  background: rgba(255, 77, 106, 0.3);
+  transform: scale(1.1);
+}
+
+.label-entry .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ── Preview Area ── */
+.preview-area {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.preview-label {
+  background: #fff;
+  color: #000;
+  border-radius: 4px;
+  padding: 18px 20px 14px;
+  text-align: center;
+  font-family: 'Inter', 'Noto Sans Bengali', Arial, sans-serif;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.preview-label .shop-name {
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  color: #000;
+}
+
+.preview-label .barcode-area {
+  margin: 6px 0;
+}
+
+.preview-label .barcode-area svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.preview-label .barcode-number {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: #111;
+  margin-bottom: 8px;
+}
+
+.preview-label .product-name {
+  font-size: 1.35rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #000;
+  margin-bottom: 6px;
+}
+
+.preview-label .price {
+  font-size: 2rem;
+  font-weight: 900;
+  color: #000;
+}
+
+.preview-label .price .taka {
+  font-family: 'Noto Sans Bengali', sans-serif;
+}
+
+.empty-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.empty-preview .empty-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
+.empty-preview p {
+  font-size: 0.9rem;
+}
+
+/* Copies input */
+.copies-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 10px;
+}
+
+.copies-inline label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.copies-inline input {
+  width: 50px;
+  padding: 6px 8px;
+  text-align: center;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  outline: none;
+}
+
+.copies-inline input:focus {
+  border-color: var(--accent);
+}
+
+/* ── Responsive ── */
+@media (max-width: 800px) {
+  .app-container {
+    grid-template-columns: 1fr;
+  }
+
+  .label-entry .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================
+   PRINT STYLES — optimized for 38mm x 25mm labels
+   ========================================== */
+@media print {
+
+  *,
+  *::before,
+  *::after {
+    background: transparent !important;
+    box-shadow: none !important;
+    animation: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', 'Noto Sans Bengali', Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body::before {
+    display: none !important;
+  }
+
+  .app-header,
+  .form-panel,
+  .no-print {
+    display: none !important;
+  }
+
+  .app-container {
+    display: block !important;
+    max-width: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .preview-panel {
+    border: none !important;
+    background: none !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .card-title {
+    display: none !important;
+  }
+
+  .preview-area {
+    gap: 0 !important;
+  }
+
+  .preview-label {
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+    padding: 1mm 2mm !important;
+    margin: 0 !important;
+    page-break-after: always;
+    page-break-inside: avoid;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 25mm;
+  }
+
+  .preview-label:last-child {
+    page-break-after: auto;
+  }
+
+  .preview-label .shop-name {
+    font-size: 8pt !important;
+    font-weight: 900 !important;
+    color: #000 !important;
+    letter-spacing: 1px !important;
+    margin-bottom: 0.5mm !important;
+  }
+
+  .preview-label .barcode-area {
+    margin: 0.3mm 0 !important;
+  }
+
+  .preview-label .barcode-area svg {
+    height: 6mm !important;
+    width: auto !important;
+    max-width: 34mm !important;
+  }
+
+  .preview-label .barcode-number {
+    font-size: 5pt !important;
+    font-weight: 700 !important;
+    color: #000 !important;
+    letter-spacing: 1px !important;
+    margin-bottom: 0.3mm !important;
+  }
+
+  .preview-label .product-name {
+    font-size: 6pt !important;
+    font-weight: 800 !important;
+    color: #000 !important;
+    margin-bottom: 0.3mm !important;
+  }
+
+  .preview-label .price {
+    font-size: 9pt !important;
+    font-weight: 900 !important;
+    color: #000 !important;
+  }
+
+  @page {
+    size: 38mm 25mm;
+    margin: 0;
+  }
+}

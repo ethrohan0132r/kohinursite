@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custom Label Printer — Kohinur</title>
+  <meta name="description"
+    content="Custom product label printer for thermal printers. Create and print barcode labels instantly." />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+</head>
+
+<body>
+
+  <header class="app-header no-print">
+    <h1>🏷️ Custom Label Printer</h1>
+    <p>নিজের মতো করে লেবেল লিখুন, সরাসরি প্রিন্ট করুন</p>
+  </header>
+
+  <div class="app-container">
+
+    <!-- ─── Left: Form Panel ─── -->
+    <div class="glass-card form-panel no-print">
+      <div class="card-title">
+        <span class="icon purple">✏️</span>
+        Label তৈরি করুন
+      </div>
+
+      <!-- Default Shop Name -->
+      <div class="form-group">
+        <label>Shop Name (সব লেবেলে একই থাকবে)</label>
+        <input type="text" id="shopName" placeholder="e.g. KOHINUR GARMENTS" value="KOHINUR GARMENTS" />
+      </div>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:18px 0;" />
+
+      <!-- Label Entries Container -->
+      <div id="entriesContainer"></div>
+
+      <div class="actions-row">
+        <button class="btn btn-accent" id="btnAdd" onclick="addEntry()">＋ নতুন Label</button>
+        <button class="btn btn-outline" onclick="clearAll()">🗑️ সব মুছুন</button>
+        <button class="btn btn-success" onclick="printLabels()">🖨️ Print</button>
+      </div>
+    </div>
+
+    <!-- ─── Right: Preview Panel ─── -->
+    <div class="glass-card preview-panel">
+      <div class="card-title no-print">
+        <span class="icon green">👁️</span>
+        Preview
+      </div>
+
+      <div class="preview-area" id="previewArea">
+        <div class="empty-preview" id="emptyPreview">
+          <div class="empty-icon">🏷️</div>
+          <p>বাম দিকে তথ্য দিন — এখানে label দেখা যাবে</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ─── State ───
+    let entryCount = 0;
+
+    // ─── Auto-generate barcode number ───
+    function generateBarcode() {
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      let code = '';
+      for (let i = 0; i < 4; i++) code += letters[Math.floor(Math.random() * 26)];
+      for (let i = 0; i < 9; i++) code += Math.floor(Math.random() * 10);
+      return code;
+    }
+
+    // ─── Add a new label entry ───
+    function addEntry() {
+      entryCount++;
+      const id = entryCount;
+      const autoBarcode = generateBarcode();
+
+      const div = document.createElement('div');
+      div.className = 'label-entry';
+      div.id = `entry-${id}`;
+      div.innerHTML = `
+        <div class="entry-header">
+          <span class="entry-number">Label #${id}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="copies-inline">
+              <label>Copies</label>
+              <input type="number" min="1" max="100" value="1" id="copies-${id}" oninput="updatePreview()" />
+            </div>
+            <button class="btn-remove" onclick="removeEntry(${id})" title="মুছুন">✕</button>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Barcode Number</label>
+            <div style="display:flex;gap:8px;">
+              <input type="text" id="barcode-${id}" placeholder="e.g. BSAA142313928" value="${autoBarcode}" oninput="updatePreview()" style="flex:1;" />
+              <button type="button" class="btn btn-outline btn-gen" onclick="regenBarcode(${id})" title="নতুন Barcode">🔄</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Price (৳)</label>
+            <input type="text" id="price-${id}" placeholder="e.g. 1578" oninput="updatePreview()" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Product Name</label>
+          <input type="text" id="product-${id}" placeholder="e.g. KUTI THREE PIECE" oninput="updatePreview()" />
+        </div>
+      `;
+
+      document.getElementById('entriesContainer').appendChild(div);
+      updatePreview();
+    }
+
+    // ─── Remove an entry ───
+    function removeEntry(id) {
+      const el = document.getElementById(`entry-${id}`);
+      if (el) {
+        el.style.animation = 'none';
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(-8px)';
+        el.style.transition = 'all 0.2s ease';
+        setTimeout(() => { el.remove(); updatePreview(); }, 200);
+      }
+    }
+
+    // ─── Clear all ───
+    function clearAll() {
+      document.getElementById('entriesContainer').innerHTML = '';
+      entryCount = 0;
+      updatePreview();
+    }
+
+    // ─── Regenerate barcode for a specific entry ───
+    function regenBarcode(id) {
+      const input = document.getElementById(`barcode-${id}`);
+      if (input) {
+        input.value = generateBarcode();
+        updatePreview();
+      }
+    }
+
+    // ─── Update preview ───
+    function updatePreview() {
+      const shopName = document.getElementById('shopName').value.trim() || 'SHOP NAME';
+      const entries = document.querySelectorAll('.label-entry');
+      const previewArea = document.getElementById('previewArea');
+      const emptyPreview = document.getElementById('emptyPreview');
+
+      // Remove old previews
+      previewArea.querySelectorAll('.preview-label').forEach(el => el.remove());
+
+      if (entries.length === 0) {
+        emptyPreview.style.display = 'flex';
+        return;
+      }
+      emptyPreview.style.display = 'none';
+
+      entries.forEach(entry => {
+        const id = entry.id.split('-')[1];
+        const barcode = document.getElementById(`barcode-${id}`)?.value.trim() || '';
+        const product = document.getElementById(`product-${id}`)?.value.trim() || '';
+        const price = document.getElementById(`price-${id}`)?.value.trim() || '';
+        const copies = parseInt(document.getElementById(`copies-${id}`)?.value) || 1;
+
+        for (let c = 0; c < copies; c++) {
+          const label = document.createElement('div');
+          label.className = 'preview-label';
+
+          const barcodeId = `bc-${id}-${c}`;
+
+          label.innerHTML = `
+            <div class="shop-name">${escapeHtml(shopName)}</div>
+            <div class="barcode-area"><svg id="${barcodeId}"></svg></div>
+            <div class="barcode-number">${escapeHtml(barcode)}</div>
+            <div class="product-name">${escapeHtml(product)}</div>
+            ${price ? `<div class="price">Price: <span class="taka">৳</span> ${escapeHtml(price)}/-</div>` : ''}
+          `;
+
+          previewArea.appendChild(label);
+
+          // Generate barcode
+          if (barcode) {
+            try {
+              JsBarcode(`#${barcodeId}`, barcode, {
+                format: 'CODE128',
+                width: 1.5,
+                height: 35,
+                displayValue: false,
+                margin: 0
+              });
+            } catch (e) {
+              document.getElementById(barcodeId).innerHTML = '';
+            }
+          } else {
+            document.getElementById(barcodeId).style.display = 'none';
+          }
+        }
+      });
+    }
+
+    // ─── HTML escape ───
+    function escapeHtml(text) {
+      const d = document.createElement('div');
+      d.textContent = text;
+      return d.innerHTML;
+    }
+
+    // ─── Print ───
+    function printLabels() {
+      updatePreview();
+      setTimeout(() => window.print(), 300);
+    }
+
+    // ─── Listen for shop name changes ───
+    document.getElementById('shopName').addEventListener('input', updatePreview);
+
+    // ─── Start with one empty entry ───
+    addEntry();
+  </script>
+
+</body>
+
+</html>
